@@ -435,6 +435,7 @@ svg.chart{width:100%;display:block;overflow:visible}
       <span class="conn-dot"></span><span class="conn-label">checking…</span>
     </div>
     <button class="upload-btn ghost-btn" id="syncAllBtn" onclick="syncAllHistory()" title="Pull every CSV from your archive folder as historical snapshots">↓ Sync All</button>
+    <button class="upload-btn ghost-btn" onclick="recalculateAll()" title="Re-enrich all rows from most recent snapshot and refresh every view">⟳ Recalculate</button>
     <button class="upload-btn" id="refreshBtn" onclick="refreshLatest()" title="Load the newest CSV from your archive folder">↻ Refresh</button>
     <input type="file" id="fileInput" accept=".csv" style="display:none" multiple>
   </div>
@@ -442,7 +443,7 @@ svg.chart{width:100%;display:block;overflow:visible}
 
 <nav class="tabs">
   <button class="active" data-view="overview"><span class="num">01</span>Overview</button>
-  <button data-view="ranking"><span class="num">02</span>Top 20 Valuable</button>
+  <button data-view="ranking"><span class="num">02</span>Top 100 Valuable</button>
   <button data-view="sectors"><span class="num">03</span>Sector Analytics</button>
   <button data-view="targets"><span class="num">04</span>Target Metrics</button>
   <button data-view="history"><span class="num">05</span>Historical</button>
@@ -519,8 +520,25 @@ svg.chart{width:100%;display:block;overflow:visible}
 
     <div class="panel">
       <div class="panel-title">Valuation Landscape <small>// Frwd PE × Ø Rendite (3J) %</small></div>
-      <div class="panel-sub">Each dot is a stock. Lower-left = cheap & high return. Top 20 highlighted in lime.</div>
+      <div class="panel-sub">Each dot is a stock. Lower-left = cheap &amp; high return. Top 100 highlighted in lime.</div>
       <div class="chart-wrap" id="chartScatter"></div>
+    </div>
+
+    <div class="panel" style="margin-top:24px">
+      <div class="panel-title">Full Stock <em class="serif" style="font-style:italic;color:var(--accent)">Universe</em> <small>// all stocks · sortable</small></div>
+      <div class="panel-sub">Complete list of all stocks after filters. Click any column header to sort. Click any row for full details.</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <span id="stockTableCount" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2)"></span>
+        <button onclick="exportTableCSV()" style="background:transparent;border:1px solid var(--line2);color:var(--ink2);padding:7px 14px;font-size:10px;cursor:pointer;font-family:'Inter',sans-serif;text-transform:uppercase;letter-spacing:0.1em;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--line2)';this.style.color='var(--ink2)'">↓ Export CSV</button>
+      </div>
+      <div style="overflow-x:auto;max-height:600px;overflow-y:auto">
+        <table id="stockTable" style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead style="position:sticky;top:0;z-index:10">
+            <tr id="stockTableHead" style="background:var(--bg3);font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink3)"></tr>
+          </thead>
+          <tbody id="stockTableBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </section>
@@ -528,8 +546,8 @@ svg.chart{width:100%;display:block;overflow:visible}
 <!-- ============================== TOP 20 RANKING ============================== -->
 <section class="view" id="view-ranking">
   <div class="panel">
-    <div class="panel-title">Top 20 <em class="serif" style="font-style:italic;color:var(--accent)">Most Valuable</em> Stocks <small>// scored by sector-weighted target metrics</small></div>
-    <div class="panel-sub">Switch between three independent ranking strategies. Click any row for full details &amp; score breakdown.</div>
+    <div class="panel-title">Top 100 <em class="serif" style="font-style:italic;color:var(--accent)">Most Valuable</em> Stocks <small>// scored by sector-weighted target metrics</small></div>
+    <div class="panel-sub">Switch between three independent ranking strategies. Click any row for full details &amp; score breakdown. Always reflects the most recent uploaded snapshot.</div>
 
     <div class="mode-switch" id="rankModeSwitch" style="margin-top:14px">
       <button class="active" data-mode="sector">Sector-Weighted Score</button>
@@ -849,8 +867,8 @@ const CURRENCY_MAP = {
 // SUPABASE CONFIG — set these to enable cloud storage
 // Leave as empty strings to use localStorage (offline mode)
 // ============================================================
-const SUPABASE_URL = 'https://qraxraoyxhxalhebtyna.supabase.co';  // e.g. 'https://xyzabc123.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyYXhyYW95eGh4YWxoZWJ0eW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY3OTQsImV4cCI6MjA5NDUzMjc5NH0.v2199PM2wJwe41Id8p9NiKEw3jRdk0eyfQWMyJGc5PU';  // e.g. 'eyJhbGciOi...'
+const SUPABASE_URL = '';  // e.g. 'https://xyzabc123.supabase.co'
+const SUPABASE_KEY = '';  // e.g. 'eyJhbGciOi...'
 const _hasSB = SUPABASE_URL && SUPABASE_KEY;
 
 // Supabase REST helper
@@ -1225,19 +1243,38 @@ const BIN_DEFS = {
   divYield:   {col:'divYield', label:'Forward Dividend Yield Group', desc:'Forward expected dividend yield', bins:['0-1','1-2','3-4','4-5','>5']},
 };
 
-// derive enriched fields once per dataset
+// derive enriched fields — always recalculates score against current state.targets
+// price-derived fields are cached (they don't change), but _score is always fresh
 function enrich(r){
-  if(r._enriched) return r;
-  r._pctHigh = (r.high52!=null && r.high52>0 && r.price!=null) ? ((r.high52-r.price)/r.high52)*100 : null;
-  r._pctLow  = (r.low52!=null && r.low52>0 && r.price!=null)  ? ((r.price-r.low52)/r.low52)*100 : null;
-  r._pctMA   = (r.ma200!=null && r.ma200>0 && r.price!=null)  ? ((r.price-r.ma200)/r.ma200)*100 : null;
-  r._epsYield= (r.eps!=null && r.price!=null && r.price>0)    ? (r.eps/r.price)*100 : null;
+  // always recompute score (targets may have changed since last enrich)
   const s = scoreStock(r);
   r._score = s ? s.score : null;
-  r._enriched = true;
+  // price-derived fields: only compute once (they come from immutable raw data)
+  if(!r._enriched){
+    r._pctHigh = (r.high52!=null && r.high52>0 && r.price!=null) ? ((r.high52-r.price)/r.high52)*100 : null;
+    r._pctLow  = (r.low52!=null && r.low52>0 && r.price!=null)  ? ((r.price-r.low52)/r.low52)*100 : null;
+    r._pctMA   = (r.ma200!=null && r.ma200>0 && r.price!=null)  ? ((r.price-r.ma200)/r.ma200)*100 : null;
+    r._epsYield= (r.eps!=null && r.price!=null && r.price>0)    ? (r.eps/r.price)*100 : null;
+    r._enriched = true;
+  }
   return r;
 }
 function enrichAll(rows){rows.forEach(enrich);return rows}
+
+// Strip stale enrichment flags from rows loaded from localStorage
+// (they were saved with _score/_enriched from a previous session/targets)
+function stripEnrichment(rows){
+  if(!rows) return rows;
+  rows.forEach(r=>{
+    delete r._enriched;
+    delete r._score;
+    delete r._pctHigh;
+    delete r._pctLow;
+    delete r._pctMA;
+    delete r._epsYield;
+  });
+  return rows;
+}
 
 // Test if a value falls into a string bin like "10-20", "<5", ">30", "1-1.5"
 function valueInBin(val, bin){
@@ -1302,14 +1339,14 @@ function fmtInt(n){if(n==null)return '—';return n.toLocaleString('en-US')}
 function renderKPIs(){
   const rows = applyFilters(state.rows,state.filters);
   const scored = rows.map(r=>({...r,_s:scoreStock(r)})).filter(r=>r._s);
-  const top20 = scored.sort((a,b)=>a._s.score-b._s.score).slice(0,20);
+  const top20 = scored.sort((a,b)=>a._s.score-b._s.score).slice(0,100);
   const kpis = [
     {label:'Total Stocks',val:fmtInt(rows.length),sub:`of ${fmtInt(state.rows.length)} total`,mono:false},
     {label:'Sectors',val:new Set(rows.map(r=>r.sector)).size,sub:'unique industries'},
     {label:'Countries',val:new Set(rows.map(r=>r.country)).size,sub:'represented'},
     {label:'Median Frwd P/E',val:fmt(median(rows.map(r=>r.frwdPE)),1),sub:'valuation',mono:true},
     {label:'Median 3Y Return',val:fmt(median(rows.map(r=>r.rendite3J)),1)+'%',sub:'performance',mono:true},
-    {label:'Top 20 Avg Score',val:fmt(top20.length?top20.reduce((a,b)=>a+b._s.score,0)/top20.length:null,2),sub:'lower = better',mono:true},
+    {label:'Top 100 Avg Score',val:fmt(top20.length?top20.reduce((a,b)=>a+b._s.score,0)/top20.length:null,2),sub:'lower = better',mono:true},
   ];
   document.getElementById('kpiStrip').innerHTML = kpis.map(k=>`
     <div class="kpi">
@@ -1513,8 +1550,10 @@ function renderOverview(){
   barChart('chartCountry',ctyArr,{color:'var(--accent)',barH:18,gap:5,labelW:120});
   // scatter
   const scored = filtered.map(r=>({...r,_s:scoreStock(r)})).filter(r=>r._s);
-  const top20 = new Set(scored.sort((a,b)=>a._s.score-b._s.score).slice(0,20).map(r=>r.ticker));
+  const top20 = new Set(scored.sort((a,b)=>a._s.score-b._s.score).slice(0,100).map(r=>r.ticker));
   scatterChart('chartScatter', filtered.map(r=>({id:r.ticker,label:r.name+' ('+r.ticker+')',x:r.frwdPE,y:r.rendite3J})), top20);
+  // full stock table
+  renderStockTable();
 }
 
 function renderRanking(){
@@ -1531,15 +1570,15 @@ function renderRanking(){
 
   let ranked;
   if(state.rankMode==='magic'){
-    ranked = magicFormulaRank(filtered).slice(0,20);
+    ranked = magicFormulaRank(filtered).slice(0,100);
   } else if(state.rankMode==='momentum'){
-    ranked = valueMomentumRank(filtered).slice(0,20);
+    ranked = valueMomentumRank(filtered).slice(0,100);
   } else {
     ranked = filtered
       .map(r=>{const s=scoreStock(r);return s?{...r,_s:s}:null})
       .filter(r=>r && r._s.coverage>0.4)
       .sort((a,b)=>a._s.score-b._s.score)
-      .slice(0,20);
+      .slice(0,100);
   }
 
   const list = document.getElementById('topStocksList');
@@ -1723,6 +1762,7 @@ function parseDateFromFilename(name){
 async function loadSnapshot(id){
   // Try localStorage first, then Supabase
   let rows = await STORE.get('snapshot_data:'+id);
+  if(rows) stripEnrichment(rows);
   if(!rows && _hasSB){
     rows = await SB.loadSnapshotData(id);
     if(rows) await STORE.set('snapshot_data:'+id,rows); // cache locally
@@ -1772,14 +1812,22 @@ function updateDsInfo(){
 async function saveTargets(){
   await STORE.set('sector_targets',state.targets);
   if(_hasSB) SB.saveSetting('sector_targets',state.targets);
+  // re-enrich all rows so scores reflect new targets immediately
+  if(state.rows.length) enrichAll(state.rows);
   toast('Targets saved');
   renderRanking();
+  renderOverview();
+  renderWatchlist();
 }
 async function resetTargets(){
   if(!confirm('Reset all sector targets to defaults?')) return;
   state.targets = JSON.parse(JSON.stringify(DEFAULT_TARGETS));
   await STORE.set('sector_targets',state.targets);
+  // re-enrich with default targets
+  if(state.rows.length) enrichAll(state.rows);
   renderTargetsEditor();
+  renderRanking();
+  renderOverview();
   toast('Targets reset');
 }
 
@@ -2017,7 +2065,7 @@ function renderRecoList(){
     if(f.currency && r.currency!==f.currency) return false;
     if(r.confidence<minConf) return false;
     return true;
-  }).slice(0,30);
+  }).slice(0,100);
 
   const el = document.getElementById('recoList');
   if(!list.length){el.innerHTML='<div class="empty">No recommendations match the current filters</div>';return}
@@ -2972,6 +3020,109 @@ async function computeRecommendations(){
 /* ============================================================ */
 /* INIT                                                          */
 /* ============================================================ */
+/* ============================================================ */
+/* FULL STOCK TABLE (Overview)                                   */
+/* ============================================================ */
+let _tableSort = {col:'_score', dir:1}; // dir: 1=asc, -1=desc
+
+const TABLE_COLS = [
+  {key:'ticker',   label:'Ticker',     fmt:(r)=>r.ticker||'—',                                        align:'left',  sortable:true},
+  {key:'name',     label:'Company',    fmt:(r)=>(r.name||'').slice(0,30),                              align:'left',  sortable:true},
+  {key:'sector',   label:'Sector',     fmt:(r)=>(r.sector||'').slice(0,18),                            align:'left',  sortable:true},
+  {key:'country',  label:'Country',    fmt:(r)=>r.country||'—',                                        align:'left',  sortable:true},
+  {key:'currency', label:'Curr',       fmt:(r)=>r.currency||'—',                                       align:'left',  sortable:true},
+  {key:'_score',   label:'Score',      fmt:(r)=>r._score!=null?fmt(r._score,2):'—',                    align:'right', sortable:true},
+  {key:'frwdPE',   label:'Frwd P/E',   fmt:(r)=>r.frwdPE!=null?fmt(r.frwdPE,1):'—',                   align:'right', sortable:true},
+  {key:'pegRatio', label:'PEG',        fmt:(r)=>r.pegRatio!=null?fmt(r.pegRatio,2):'—',                align:'right', sortable:true},
+  {key:'rendite3J',label:'3Y Ret %',   fmt:(r)=>r.rendite3J!=null?fmt(r.rendite3J,1)+'%':'—',          align:'right', sortable:true},
+  {key:'umsatz3J', label:'Rev Gr %',   fmt:(r)=>r.umsatz3J!=null?fmt(r.umsatz3J,1)+'%':'—',           align:'right', sortable:true},
+  {key:'opMargin', label:'Op Mgn %',   fmt:(r)=>r.opMargin!=null?fmt(r.opMargin,1)+'%':'—',           align:'right', sortable:true},
+  {key:'roic',     label:'RoIC %',     fmt:(r)=>r.roic!=null?fmt(r.roic,1)+'%':'—',                   align:'right', sortable:true},
+  {key:'netDebtFCF',label:'ND/FCF',    fmt:(r)=>r.netDebtFCF!=null?fmt(r.netDebtFCF,1):'—',           align:'right', sortable:true},
+  {key:'evPretax', label:'EV/Pretax',  fmt:(r)=>r.evPretax!=null?fmt(r.evPretax,1)+'×':'—',           align:'right', sortable:true},
+  {key:'divYield', label:'Div Yld %',  fmt:(r)=>r.divYield!=null?fmt(r.divYield,2)+'%':'—',           align:'right', sortable:true},
+  {key:'price',    label:'Price',      fmt:(r)=>r.price!=null?fmt(r.price,2):'—',                      align:'right', sortable:true},
+  {key:'_pctMA',   label:'vs 200d MA', fmt:(r)=>r._pctMA!=null?(r._pctMA>=0?'+':'')+fmt(r._pctMA,1)+'%':'—', align:'right', sortable:true},
+];
+
+function renderStockTable(){
+  if(!state.rows.length) return;
+  const filtered = applyFilters(state.rows, state.filters);
+  const advFiltered = applyAdvFilters(filtered);
+  advFiltered.forEach(enrich);
+
+  // sort
+  const col = _tableSort.col;
+  const dir = _tableSort.dir;
+  const sorted = [...advFiltered].sort((a,b)=>{
+    const av = a[col], bv = b[col];
+    if(av==null && bv==null) return 0;
+    if(av==null) return 1;
+    if(bv==null) return -1;
+    if(typeof av==='string') return dir * av.localeCompare(bv);
+    return dir * (av - bv);
+  });
+
+  document.getElementById('stockTableCount').textContent =
+    `${sorted.length.toLocaleString()} stocks · sorted by ${TABLE_COLS.find(c=>c.key===col)?.label||col}`;
+
+  // header
+  const head = document.getElementById('stockTableHead');
+  head.innerHTML = TABLE_COLS.map(c=>{
+    const active = c.key === col;
+    const arrow = active ? (dir===1?' ↑':' ↓') : '';
+    return `<th onclick="sortTable('${c.key}')" style="padding:9px 12px;text-align:${c.align};cursor:${c.sortable?'pointer':'default'};white-space:nowrap;border-bottom:1px solid var(--line2);color:${active?'var(--accent)':'var(--ink3)'};user-select:none">${c.label}${arrow}</th>`;
+  }).join('');
+
+  // body — render all rows but virtualise display height with tbody max-height
+  const scoreArr = sorted.map(r=>r._score).filter(x=>x!=null);
+  const minScore = scoreArr.length ? Math.min(...scoreArr) : 0;
+  const maxScore = scoreArr.length ? Math.max(...scoreArr) : 4;
+
+  const body = document.getElementById('stockTableBody');
+  body.innerHTML = sorted.map((r,i)=>{
+    const sc = r._score;
+    const scoreCls = sc==null?'':sc<1.8?'color:var(--accent)':sc<2.5?'color:#9af542':sc<3.2?'color:var(--amber)':'color:var(--red)';
+    const bg = i%2===0 ? 'var(--bg2)' : 'var(--bg)';
+    return `<tr onclick="openStockDetail('${r.ticker}')" style="background:${bg};cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='${bg}'">
+      ${TABLE_COLS.map((c,ci)=>{
+        const val = c.fmt(r);
+        const style = `padding:8px 12px;text-align:${c.align};font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--line);white-space:nowrap;font-size:11px;${c.key==='_score'?scoreCls:''}${c.key==='ticker'?';font-weight:600;color:var(--accent)':''}`;
+        return `<td style="${style}">${val}</td>`;
+      }).join('')}
+    </tr>`;
+  }).join('');
+}
+
+function sortTable(col){
+  if(_tableSort.col === col){
+    _tableSort.dir *= -1;
+  } else {
+    _tableSort.col = col;
+    _tableSort.dir = col==='_score'||col==='frwdPE'||col==='pegRatio'||col==='evPretax'||col==='netDebtFCF' ? 1 : -1;
+  }
+  renderStockTable();
+}
+
+function exportTableCSV(){
+  const filtered = applyFilters(state.rows, state.filters);
+  const advFiltered = applyAdvFilters(filtered);
+  advFiltered.forEach(enrich);
+  const headers = TABLE_COLS.map(c=>c.label).join(',');
+  const rows = advFiltered.map(r=>TABLE_COLS.map(c=>{
+    const v = c.fmt(r).replace(/%|×/g,'').replace(',','');
+    return `"${v}"`;
+  }).join(','));
+  const csv = [headers,...rows].join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `equity_intelligence_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+window.sortTable = sortTable;
+window.exportTableCSV = exportTableCSV;
+
 function renderAll(){
   if(state.rows.length) enrichAll(state.rows);
   renderOverview();
@@ -2999,6 +3150,28 @@ function clearFilters(){
   state.filters={sector:'',country:'',currency:'',search:''};
   renderOverview();
 }
+
+async function recalculateAll(){
+  if(!state.snapshots.length){toast('No snapshots loaded');return}
+  // load newest snapshot
+  const newest = state.snapshots.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
+  if(!newest){toast('No snapshots available');return}
+  toast('Loading newest snapshot…');
+  let rows = await STORE.get('snapshot_data:'+newest.id);
+  if(rows) stripEnrichment(rows);
+  if(!rows && _hasSB){
+    rows = await SB.loadSnapshotData(newest.id);
+  }
+  if(!rows){toast('Could not load snapshot data');return}
+  state.rows = rows;
+  state.activeSnapshotId = newest.id;
+  await STORE.set('active_snapshot', newest.id);
+  enrichAll(state.rows);
+  _recoCache = null;
+  renderAll();
+  toast(`Recalculated · ${rows.length} stocks · ${newest.date}`);
+}
+window.recalculateAll = recalculateAll;
 function clearRankFilters(){
   state.rankFilters={sector:'',country:'',currency:'',minOpMargin:''};
   renderFilters();renderRanking();
@@ -3334,20 +3507,18 @@ function updateSBStatus(){
   if(!meta) meta = await STORE.get('snapshots_meta');
   if(meta && meta.length) state.snapshots = meta;
 
-  // load active snapshot data
-  const active = await STORE.get('active_snapshot');
-  if(active){
-    let rows = await STORE.get('snapshot_data:'+active);
-    if(!rows && _hasSB) rows = await SB.loadSnapshotData(active);
-    if(rows){state.rows=rows;state.activeSnapshotId=active}
-  }
-  // if no active but snapshots exist, load the newest
-  if(!state.rows.length && state.snapshots.length){
+  // Always load the NEWEST snapshot on boot (recalculate fresh every session)
+  if(state.snapshots.length){
     const newest = state.snapshots.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
     if(newest){
       let rows = await STORE.get('snapshot_data:'+newest.id);
+      if(rows) stripEnrichment(rows); // clear stale scores from previous session
       if(!rows && _hasSB) rows = await SB.loadSnapshotData(newest.id);
-      if(rows){state.rows=rows;state.activeSnapshotId=newest.id;await STORE.set('active_snapshot',newest.id)}
+      if(rows){
+        state.rows = rows;
+        state.activeSnapshotId = newest.id;
+        await STORE.set('active_snapshot', newest.id);
+      }
     }
   }
 
