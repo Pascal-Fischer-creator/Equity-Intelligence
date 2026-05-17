@@ -576,9 +576,9 @@ svg.chart{width:100%;display:block;overflow:visible}
       <button class="filter-clear" onclick="clearRankFilters()">Reset</button>
     </div>
 
-    <div class="list-header" style="margin-top:20px;grid-template-columns:32px 28px 60px 1fr 90px 80px 90px 80px">
+    <div class="list-header" style="margin-top:20px;grid-template-columns:32px 28px 60px 1fr 80px 70px 80px 80px 60px">
       <div>#</div><div></div><div>Ticker</div><div>Company</div>
-      <div>Score</div><div>Frwd PE</div><div>3Y Return %</div><div>Sector</div>
+      <div>Score</div><div title="% of sector weights that had scoreable data">Cov.</div><div>Frwd PE</div><div>3Y Return %</div><div>Sector</div>
     </div>
     <div id="topStocksList" class="top-stocks"></div>
   </div>
@@ -834,20 +834,31 @@ svg.chart{width:100%;display:block;overflow:visible}
 /* ============================================================ */
 /* SECTOR TARGETS — extracted from Stock_Analysis_2_0.xlsx       */
 /* ============================================================ */
-const DEFAULT_TARGETS = {"Technology":{"weights":{"frwdPE":0.15,"pegRatio":0,"rendite3J":0,"umsatz3J":0.35,"pretax3J":0,"opMargin":0.3,"netDebtFCF":0.1,"roic":0,"evPretax":0,"divYield":0},"targets":{"frwdPE":{"cheap":"<20","attractive":">=20<35","neutral":">=35<50","unattractive":">=50"},"pegRatio":{"cheap":"<1","attractive":">=1<1.5","neutral":">=1.5<2","unattractive":">=2"},"umsatz3J":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"pretax3J":{"cheap":">=25","attractive":">=20<25","neutral":">=15<20","unattractive":"<15"},"opMargin":{"cheap":">=25","attractive":">=20<25","neutral":">=15<20","unattractive":"<15"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<2.5","unattractive":">=2.5"},"roic":{"cheap":">=10","attractive":">=8<10","neutral":">=5<8","unattractive":"<5"},"evPretax":{"cheap":"<=15","attractive":">=15<22","neutral":">=22<30","unattractive":">30"}}},"Consumer Cyclical":{"weights":{"frwdPE":0.15,"pegRatio":0,"umsatz3J":0.1,"pretax3J":0.1,"opMargin":0.25,"netDebtFCF":0.15,"roic":0.15,"evPretax":0.1,"divYield":0},"targets":{"frwdPE":{"cheap":"<10","attractive":">=10<20","neutral":">=20<30","unattractive":">=30"},"pegRatio":{"cheap":"<0.8","attractive":">=0.8<1.2","neutral":">=1.2<1.8","unattractive":">=1.8"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"opMargin":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=10","attractive":">=10<14","neutral":">=14<18","unattractive":">18"}}},"Communication Services":{"weights":{"frwdPE":0.2,"umsatz3J":0.2,"pretax3J":0.15,"opMargin":0.15,"netDebtFCF":0.05,"roic":0.15,"evPretax":0.1},"targets":{"frwdPE":{"cheap":"<10","attractive":">=10<20","neutral":">=20<30","unattractive":">=30"},"pegRatio":{"cheap":"<1","attractive":">=1<1.5","neutral":">=1.5<2","unattractive":">=2"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<2.5","unattractive":">=2.5"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=12","attractive":">=12<19","neutral":">=19<25","unattractive":">25"}}},"Financial Services":{"weights":{"frwdPE":0.1,"umsatz3J":0.1,"pretax3J":0.2,"opMargin":0.1,"roic":0.25,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<10","attractive":">=10<15","neutral":">=15<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"umsatz3J":{"cheap":">=8","attractive":">=5<8","neutral":">=2<5","unattractive":"<2"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=8","attractive":">=8<11","neutral":">=11<15","unattractive":">15"},"divYield":{"cheap":">=6","attractive":">=4<6","neutral":">=2<4","unattractive":"<2"}}},"Consumer Defensive":{"weights":{"frwdPE":0.1,"umsatz3J":0.05,"pretax3J":0.2,"opMargin":0.2,"netDebtFCF":0.1,"roic":0.15,"evPretax":0.1,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<15","attractive":">=15<20","neutral":">=20<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"umsatz3J":{"cheap":">=8","attractive":">=5<8","neutral":">=2<5","unattractive":"<2"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=10","attractive":">=10<14","neutral":">=14<18","unattractive":">18"},"divYield":{"cheap":">=5","attractive":">=3<5","neutral":">=1<3","unattractive":"<1"}}},"Healthcare":{"weights":{"frwdPE":0.1,"umsatz3J":0.15,"pretax3J":0.1,"opMargin":0.2,"netDebtFCF":0.1,"roic":0.15,"evPretax":0.1},"targets":{"frwdPE":{"cheap":"<12","attractive":">=12<18","neutral":">=18<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.5","neutral":">=1.5<2","unattractive":">=2"},"umsatz3J":{"cheap":">=8","attractive":">=5<8","neutral":">=2<5","unattractive":"<2"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=12","attractive":">=12<19","neutral":">=19<25","unattractive":">25"}}},"Energy":{"weights":{"frwdPE":0.05,"pegRatio":0.05,"umsatz3J":0.05,"pretax3J":0.05,"opMargin":0.15,"netDebtFCF":0.15,"roic":0.2,"evPretax":0.2,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<8","attractive":">=8<12","neutral":">=12<20","unattractive":">=20"},"pegRatio":{"cheap":"<0.8","attractive":">=0.8<1.2","neutral":">=1.2<1.8","unattractive":">=1.8"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"opMargin":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">7","attractive":">=5<7","neutral":">=3<5","unattractive":"<3"},"evPretax":{"cheap":"<=8","attractive":">=8<11","neutral":">=11<15","unattractive":">15"},"divYield":{"cheap":">=5","attractive":">=3<5","neutral":">=1<3","unattractive":"<1"}}},"Industrials":{"weights":{"frwdPE":0.1,"umsatz3J":0.05,"pretax3J":0.1,"opMargin":0.2,"netDebtFCF":0.15,"roic":0.15,"evPretax":0.15,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<12","attractive":">=12<18","neutral":">=18<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"opMargin":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=10","attractive":">=10<14","neutral":">=14<18","unattractive":">18"},"divYield":{"cheap":">=4","attractive":">=2<4","neutral":">=1<2","unattractive":"<1"}}},"Basic Materials":{"weights":{"frwdPE":0.1,"umsatz3J":0.05,"pretax3J":0.1,"opMargin":0.2,"netDebtFCF":0.15,"roic":0.15,"evPretax":0.15,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<8","attractive":">=8<12","neutral":">=12<20","unattractive":">=20"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">7","attractive":">=5<7","neutral":">=3<5","unattractive":"<3"},"evPretax":{"cheap":"<=8","attractive":">=8<11","neutral":">=11<15","unattractive":">15"},"divYield":{"cheap":">=4","attractive":">=2<4","neutral":">=1<2","unattractive":"<1"}}},"Utilities":{"weights":{"frwdPE":0.05,"umsatz3J":0.05,"pretax3J":0.05,"opMargin":0.15,"netDebtFCF":0.15,"roic":0.2,"evPretax":0.2,"divYield":0.15},"targets":{"frwdPE":{"cheap":"<12","attractive":">=12<18","neutral":">=18<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"umsatz3J":{"cheap":">=7","attractive":">=4<7","neutral":">=2<4","unattractive":"<2"},"pretax3J":{"cheap":">=18","attractive":">=12<18","neutral":">=8<12","unattractive":"<8"},"opMargin":{"cheap":">=18","attractive":">=12<18","neutral":">=8<12","unattractive":"<8"},"netDebtFCF":{"cheap":"<3","attractive":">=3<5","neutral":">=5<7","unattractive":">=7"},"roic":{"cheap":">5","attractive":">=4<5","neutral":">=3<4","unattractive":"<3"},"evPretax":{"cheap":"<=10","attractive":">=10<12","neutral":">=12<14","unattractive":">14"},"divYield":{"cheap":">=4","attractive":">=2<4","neutral":">=1<2","unattractive":"<1"}}},"Real Estate":{"weights":{"frwdPE":0.1,"umsatz3J":0.15,"pretax3J":0.05,"netDebtFCF":0.2,"roic":0.1,"evPretax":0.2,"divYield":0.2},"targets":{"frwdPE":{"cheap":"<12","attractive":">=12<18","neutral":">=18<25","unattractive":">=25"},"pegRatio":{"cheap":"<0.8","attractive":">=0.8<1.2","neutral":">=1.2<1.6","unattractive":">=1.6"},"umsatz3J":{"cheap":">=10","attractive":">=7<10","neutral":">=4<7","unattractive":"<4"},"pretax3J":{"cheap":">=25","attractive":">=20<25","neutral":">=15<20","unattractive":"<15"},"opMargin":{"cheap":">=25","attractive":">=20<25","neutral":">=15<20","unattractive":"<15"},"netDebtFCF":{"cheap":"<4","attractive":">=4<6","neutral":">=6<8","unattractive":">=8"},"roic":{"cheap":">5","attractive":">=4<5","neutral":">=3<4","unattractive":"<3"},"evPretax":{"cheap":"<=10","attractive":">=10<13","neutral":">=13<16","unattractive":">16"},"divYield":{"cheap":">=6","attractive":">=4<6","neutral":">=2<4","unattractive":"<2"}}}};
+const DEFAULT_TARGETS = {"Technology":{"weights":{"frwdPE":0.15,"pegRatio":0,"high52pct":0.1,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.35,"pretax3J":0,"opMargin":0.3,"netDebtFCF":0.1,"roic":0,"evPretax":0,"epsTTMpct":0,"divYield":0},"targets":{"frwdPE":{"cheap":"<20","attractive":">=20<35","neutral":">=35<50","unattractive":">=50"},"pegRatio":{"cheap":"<1","attractive":">=1<1.5","neutral":">=1.5<2","unattractive":">=2"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"pretax3J":{"cheap":">=25","attractive":">=20<25","neutral":">=15<20","unattractive":"<15"},"opMargin":{"cheap":">=25","attractive":">=20<25","neutral":">=15<20","unattractive":"<15"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<2.5","unattractive":">=2.5"},"roic":{"cheap":">=10","attractive":">=8<10","neutral":">=5<8","unattractive":"<5"},"evPretax":{"cheap":"<=15","attractive":">=15<22","neutral":">=22<30","unattractive":">30"}}},"Consumer Cyclical":{"weights":{"frwdPE":0.15,"pegRatio":0,"high52pct":0,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.1,"pretax3J":0.1,"opMargin":0.25,"netDebtFCF":0.15,"roic":0.15,"evPretax":0.1,"epsTTMpct":0,"divYield":0},"targets":{"frwdPE":{"cheap":"<10","attractive":">=10<20","neutral":">=20<30","unattractive":">=30"},"pegRatio":{"cheap":"<0.8","attractive":">=0.8<1.2","neutral":">=1.2<1.8","unattractive":">=1.8"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"opMargin":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=10","attractive":">=10<14","neutral":">=14<18","unattractive":">18"}}},"Communication Services":{"weights":{"frwdPE":0.2,"pegRatio":0,"high52pct":0,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.2,"pretax3J":0.15,"opMargin":0.15,"netDebtFCF":0.05,"roic":0.15,"evPretax":0.1,"epsTTMpct":0,"divYield":0},"targets":{"frwdPE":{"cheap":"<10","attractive":">=10<20","neutral":">=20<30","unattractive":">=30"},"pegRatio":{"cheap":"<1","attractive":">=1<1.5","neutral":">=1.5<2","unattractive":">=2"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<2.5","unattractive":">=2.5"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=12","attractive":">=12<19","neutral":">=19<25","unattractive":">25"}}},"Financial Services":{"weights":{"frwdPE":0.1,"pegRatio":0,"high52pct":0.05,"low52pct":0,"ma200pct":0.1,"rendite3J":0,"umsatz3J":0.1,"pretax3J":0.2,"opMargin":0.1,"netDebtFCF":0,"roic":0.25,"evPretax":0,"epsTTMpct":0.05,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<10","attractive":">=10<15","neutral":">=15<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=8","attractive":">=5<8","neutral":">=2<5","unattractive":"<2"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=8","attractive":">=8<11","neutral":">=11<15","unattractive":">15"}}},"Consumer Defensive":{"weights":{"frwdPE":0.1,"pegRatio":0,"high52pct":0,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.05,"pretax3J":0.2,"opMargin":0.2,"netDebtFCF":0.1,"roic":0.15,"evPretax":0.1,"epsTTMpct":0.05,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<15","attractive":">=15<20","neutral":">=20<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=8","attractive":">=5<8","neutral":">=2<5","unattractive":"<2"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=8<15","unattractive":"<8"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=10","attractive":">=10<14","neutral":">=14<18","unattractive":">18"}}},"Healthcare":{"weights":{"frwdPE":0.1,"pegRatio":0,"high52pct":0,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.15,"pretax3J":0.1,"opMargin":0.2,"netDebtFCF":0.1,"roic":0.15,"evPretax":0.1,"epsTTMpct":0.05,"divYield":0},"targets":{"frwdPE":{"cheap":"<12","attractive":">=12<18","neutral":">=18<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.5","neutral":">=1.5<2","unattractive":">=2"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=8","attractive":">=5<8","neutral":">=2<5","unattractive":"<2"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=12","attractive":">=12<19","neutral":">=19<25","unattractive":">25"}}},"Energy":{"weights":{"frwdPE":0.05,"pegRatio":0.05,"high52pct":0,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.05,"pretax3J":0.05,"opMargin":0.15,"netDebtFCF":0.15,"roic":0.2,"evPretax":0.2,"epsTTMpct":0.05,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<8","attractive":">=8<12","neutral":">=12<20","unattractive":">=20"},"pegRatio":{"cheap":"<0.8","attractive":">=0.8<1.2","neutral":">=1.2<1.8","unattractive":">=1.8"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"opMargin":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">7","attractive":">=5<7","neutral":">=3<5","unattractive":"<3"},"evPretax":{"cheap":"<=8","attractive":">=8<11","neutral":">=11<15","unattractive":">15"}}},"Industrials":{"weights":{"frwdPE":0.1,"pegRatio":0,"high52pct":0,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.05,"pretax3J":0.1,"opMargin":0.2,"netDebtFCF":0.15,"roic":0.15,"evPretax":0.15,"epsTTMpct":0.05,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<12","attractive":">=12<18","neutral":">=18<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"opMargin":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">8","attractive":">=6<8","neutral":">=4<6","unattractive":"<4"},"evPretax":{"cheap":"<=10","attractive":">=10<14","neutral":">=14<18","unattractive":">18"}}},"Basic Materials":{"weights":{"frwdPE":0.1,"pegRatio":0,"high52pct":0,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.05,"pretax3J":0.1,"opMargin":0.2,"netDebtFCF":0.15,"roic":0.15,"evPretax":0.15,"epsTTMpct":0.05,"divYield":0.05},"targets":{"frwdPE":{"cheap":"<8","attractive":">=8<12","neutral":">=12<20","unattractive":">=20"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=12","attractive":">=8<12","neutral":">=5<12","unattractive":"<5"},"pretax3J":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"opMargin":{"cheap":">=20","attractive":">=15<20","neutral":">=10<15","unattractive":"<10"},"netDebtFCF":{"cheap":"<1","attractive":">=1<2","neutral":">=2<3","unattractive":">=3"},"roic":{"cheap":">7","attractive":">=5<7","neutral":">=3<5","unattractive":"<3"},"evPretax":{"cheap":"<=8","attractive":">=8<11","neutral":">=11<15","unattractive":">15"}}},"Utilities":{"weights":{"frwdPE":0.05,"pegRatio":0,"high52pct":0,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.05,"pretax3J":0.05,"opMargin":0.15,"netDebtFCF":0.15,"roic":0.2,"evPretax":0.2,"epsTTMpct":0,"divYield":0.15},"targets":{"frwdPE":{"cheap":"<12","attractive":">=12<18","neutral":">=18<25","unattractive":">=25"},"pegRatio":{"cheap":"<1","attractive":">=1<1.3","neutral":">=1.3<1.8","unattractive":">=1.8"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=7","attractive":">=4<7","neutral":">=2<4","unattractive":"<2"},"pretax3J":{"cheap":">=18","attractive":">=12<18","neutral":">=8<12","unattractive":"<8"},"opMargin":{"cheap":">=18","attractive":">=12<18","neutral":">=8<12","unattractive":"<8"},"netDebtFCF":{"cheap":"<3","attractive":">=3<5","neutral":">=4<5","unattractive":">=5"},"roic":{"cheap":">5","attractive":">=4<5","neutral":">=3<4","unattractive":"<3"},"evPretax":{"cheap":"<=10","attractive":">=10<12","neutral":">=12<14","unattractive":">14"}}},"Real Estate":{"weights":{"frwdPE":0.1,"pegRatio":0,"high52pct":0,"low52pct":0,"ma200pct":0,"rendite3J":0,"umsatz3J":0.15,"pretax3J":0.05,"opMargin":0,"netDebtFCF":0.2,"roic":0.1,"evPretax":0.2,"epsTTMpct":0,"divYield":0.2},"targets":{"frwdPE":{"cheap":"<12","attractive":">=12<18","neutral":">=18<25","unattractive":">=25"},"pegRatio":{"cheap":"<0.8","attractive":">=0.8<1.2","neutral":">=1.2<1.6","unattractive":">=1.6"},"high52pct":{"cheap":">75","attractive":"<=75>50","neutral":"<=50>25","unattractive":"<=25"},"low52pct":{"cheap":"<=25","attractive":"<=50>25","neutral":"<=75>50","unattractive":">75"},"ma200pct":{"cheap":">=25","attractive":">=5<25","neutral":">-5<5","unattractive":"<=-5"},"umsatz3J":{"cheap":">=10","attractive":">=7<10","neutral":">=4<7","unattractive":"<4"},"pretax3J":{"cheap":">=25","attractive":">=20<25","neutral":">=15<20","unattractive":"<15"},"netDebtFCF":{"cheap":"<4","attractive":">=4<6","neutral":">=6<8","unattractive":">=8"},"roic":{"cheap":">5","attractive":">=4<5","neutral":">=3<4","unattractive":"<3"},"evPretax":{"cheap":"<=10","attractive":">=10<13","neutral":">=13<16","unattractive":">16"}}}};
 
 // Make sure every sector has every metric (fill missing with neutral defaults)
-const ALL_METRICS = ['frwdPE','pegRatio','umsatz3J','pretax3J','opMargin','netDebtFCF','roic','evPretax','divYield'];
+const ALL_METRICS = [
+  'frwdPE','pegRatio',
+  'high52pct','low52pct','ma200pct',
+  'rendite3J','umsatz3J','pretax3J',
+  'opMargin','netDebtFCF','roic','evPretax',
+  'epsTTMpct','divYield'
+];
 const METRIC_LABELS = {
-  frwdPE:{name:'Forward P/E',sub:'price ÷ earnings',col:'Frwd PE',lowerBetter:true},
-  pegRatio:{name:'PEG Ratio',sub:'pe ÷ growth',col:'PEG Ratio',lowerBetter:true},
-  umsatz3J:{name:'Revenue Growth (3Y)',sub:'avg annual %',col:'Ø Umsatzwachstum (3J) %',lowerBetter:false},
-  pretax3J:{name:'Pretax Income Growth (3Y)',sub:'avg annual %',col:'Ø Pretax Income Wachstum (3J) %',lowerBetter:false},
-  opMargin:{name:'Operating Margin',sub:'op income ÷ revenue',col:'Operating Margin vs. Pretax Income %',lowerBetter:false},
-  netDebtFCF:{name:'Net Debt / FCF',sub:'years to repay',col:'NetDebt/FCF (FY last reported / (in yrs)',lowerBetter:true},
-  roic:{name:'Return on Invested Capital',sub:'roic %',col:'Return Invested Capital vs. Pretax Income',lowerBetter:false},
-  evPretax:{name:'EV / Pretax Income',sub:'multiple x',col:'Enterprise Value vs. Pretax Income',lowerBetter:true},
-  divYield:{name:'Dividend Yield',sub:'forward %',col:'Forward trailing Dividend Yield [%]',lowerBetter:false},
+  frwdPE:    {name:'Forward P/E',          sub:'price ÷ earnings',                 lowerBetter:true},
+  pegRatio:  {name:'PEG Ratio',            sub:'pe ÷ growth rate',                 lowerBetter:true},
+  high52pct: {name:'% from 52w High (range)',  sub:'% of high-low range covered (>75=near high)', lowerBetter:false},
+  low52pct:  {name:'% below 52w High',         sub:'% below 52w high (<=25=near high=cheap)',     lowerBetter:true},
+  ma200pct:  {name:'200d MA Deviation',    sub:'% above/below 200-day moving avg', lowerBetter:false},
+  rendite3J: {name:'3Y Annual Return',     sub:'avg annual performance %',          lowerBetter:false},
+  umsatz3J:  {name:'Revenue Growth (3Y)',  sub:'avg annual revenue growth %',       lowerBetter:false},
+  pretax3J:  {name:'Pretax Income Gr. (3Y)',sub:'avg annual pretax income growth %',lowerBetter:false},
+  opMargin:  {name:'Operating Margin',     sub:'pretax ÷ operating revenues %',    lowerBetter:false},
+  netDebtFCF:{name:'Net Debt / FCF',       sub:'years to repay debt via FCF',       lowerBetter:true},
+  roic:      {name:'Return on Inv. Capital',sub:'pretax return on invested capital %',lowerBetter:false},
+  evPretax:  {name:'EV / Pretax Income',   sub:'enterprise value multiple ×',       lowerBetter:true},
+  epsTTMpct: {name:'EPS Yield (TTM)',      sub:'eps ÷ price %',                     lowerBetter:false},
+  divYield:  {name:'Dividend Yield',       sub:'forward dividend yield %',          lowerBetter:false},
 };
 
 // Country -> Currency mapping (for the requested Currency filter)
@@ -867,8 +878,8 @@ const CURRENCY_MAP = {
 // SUPABASE CONFIG — set these to enable cloud storage
 // Leave as empty strings to use localStorage (offline mode)
 // ============================================================
-const SUPABASE_URL = 'https://qraxraoyxhxalhebtyna.supabase.co';  // e.g. 'https://xyzabc123.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyYXhyYW95eGh4YWxoZWJ0eW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTY3OTQsImV4cCI6MjA5NDUzMjc5NH0.v2199PM2wJwe41Id8p9NiKEw3jRdk0eyfQWMyJGc5PU';  // e.g. 'eyJhbGciOi...'
+const SUPABASE_URL = '';  // e.g. 'https://xyzabc123.supabase.co'
+const SUPABASE_KEY = '';  // e.g. 'eyJhbGciOi...'
 const _hasSB = SUPABASE_URL && SUPABASE_KEY;
 
 // Supabase REST helper
@@ -1117,11 +1128,14 @@ function pick(o, ...candidates){
 }
 
 function normalizeRow(o){
+  // Explicit name/country columns (new CSV uses "Company Name", "Company Country")
+  const nameVal = pick(o,'Name','Company Name');
+  const countryVal = pick(o,'Country','Company Country')||'Unknown';
   return {
     ticker:pick(o,'Ticker'),
-    name:pick(o,'Name'),
-    country:pick(o,'Country')||'Unknown',
-    currency:CURRENCY_MAP[pick(o,'Country')]||'OTHER',
+    name:nameVal,
+    country:countryVal,
+    currency:CURRENCY_MAP[countryVal]||'OTHER',
     sector:pick(o,'Industry-Sector','Industry_Sector')||'Unknown',
     frwdPE:num(pick(o,'Frwd PE')),
     pegRatio:num(pick(o,'PEG Ratio')),
@@ -1134,10 +1148,13 @@ function normalizeRow(o){
     pretax3J:num(pick(o,'Ø Pretax Income Wachstum (3J) %','Pretax Income Wachstum (3J) %')),
     opMargin:num(pick(o,'Operating Margin vs. Pretax Income %')),
     netDebtFCF:num(pick(o,'NetDebt/FCF (FY last reported / (in yrs)','NetDebt/FCF')),
-    roic:num(pick(o,'Return Invested Capital vs. Pretax Income')),
+    // handles both old "Return Invested Capital vs. Pretax Income" and new "...in %"
+    roic:num(pick(o,'Return Invested Capital vs. Pretax Income in %','Return Invested Capital vs. Pretax Income')),
     evPretax:num(pick(o,'Enterprise Value vs. Pretax Income')),
-    eps:num(pick(o,'EPS (TTM)','EPS (TTM) in amount')),
+    eps:num(pick(o,'EPS (TTM) in amount','EPS (TTM)')),
     divYield:num(pick(o,'Forward trailing Dividend Yield [%]')),
+    // NOTE: pre-calculated columns from Python (EPS Yield %, % Range, Ranking, Total)
+    // are intentionally ignored — dashboard recalculates them from raw data
   };
 }
 
@@ -1243,20 +1260,30 @@ const BIN_DEFS = {
   divYield:   {col:'divYield', label:'Forward Dividend Yield Group', desc:'Forward expected dividend yield', bins:['0-1','1-2','3-4','4-5','>5']},
 };
 
-// derive enriched fields — always recalculates score against current state.targets
-// price-derived fields are cached (they don't change), but _score is always fresh
 function enrich(r){
   // always recompute score (targets may have changed since last enrich)
-  const s = scoreStock(r);
-  r._score = s ? s.score : null;
   // price-derived fields: only compute once (they come from immutable raw data)
   if(!r._enriched){
     r._pctHigh = (r.high52!=null && r.high52>0 && r.price!=null) ? ((r.high52-r.price)/r.high52)*100 : null;
     r._pctLow  = (r.low52!=null && r.low52>0 && r.price!=null)  ? ((r.price-r.low52)/r.low52)*100 : null;
     r._pctMA   = (r.ma200!=null && r.ma200>0 && r.price!=null)  ? ((r.price-r.ma200)/r.ma200)*100 : null;
     r._epsYield= (r.eps!=null && r.price!=null && r.price>0)    ? (r.eps/r.price)*100 : null;
+    // high52pct: % of 52w range price has covered from low toward high (0=at low, 100=at high)
+    // Excel band: Cheap >75 → stock near its 52w high (strong momentum / value confirmed)
+    // = 100 - (% below high) = 100 - _pctHigh
+    r.high52pct = r._pctHigh!=null ? 100 - r._pctHigh : null;
+    // low52pct: % the price is BELOW its 52w high (same as _pctHigh)
+    // Excel band: Cheap <=25 → stock within 25% of its 52w high (near the top)
+    // NVDA: 4.74% below high → <=25 → Cheap ✓
+    r.low52pct  = r._pctHigh;  // % below 52w high
+    // ma200pct: % above/below 200d MA — same sign convention as Excel
+    r.ma200pct  = r._pctMA;
+    // epsTTMpct: EPS yield %
+    r.epsTTMpct = r._epsYield;
     r._enriched = true;
   }
+  const s = scoreStock(r);
+  r._score = s ? s.score : null;
   return r;
 }
 function enrichAll(rows){rows.forEach(enrich);return rows}
@@ -1268,10 +1295,8 @@ function stripEnrichment(rows){
   rows.forEach(r=>{
     delete r._enriched;
     delete r._score;
-    delete r._pctHigh;
-    delete r._pctLow;
-    delete r._pctMA;
-    delete r._epsYield;
+    delete r._pctHigh; delete r._pctLow; delete r._pctMA; delete r._epsYield;
+    delete r.high52pct; delete r.low52pct; delete r.ma200pct; delete r.epsTTMpct;
   });
   return rows;
 }
@@ -1576,7 +1601,7 @@ function renderRanking(){
   } else {
     ranked = filtered
       .map(r=>{const s=scoreStock(r);return s?{...r,_s:s}:null})
-      .filter(r=>r && r._s.coverage>0.4)
+      .filter(r=>r && r._s.coverage>0.6)
       .sort((a,b)=>a._s.score-b._s.score)
       .slice(0,100);
   }
@@ -1590,12 +1615,14 @@ function renderRanking(){
     else if(state.rankMode==='momentum'){scoreVal=r._vm;cls='score-1'}
     else {scoreVal=r._s.score;cls=r._s.score<1.8?'score-1':r._s.score<2.5?'score-2':r._s.score<3.2?'score-3':'score-4'}
     const isStarred = state.watchlist.includes(r.ticker);
-    return `<div class="stock-row" style="grid-template-columns:32px 28px 60px 1fr 90px 80px 90px 80px;animation-delay:${i*0.03}s" onclick="openStockDetail('${r.ticker}')">
+    const coveragePct = state.rankMode==='sector' && r._s ? (r._s.coverage*100).toFixed(0)+'%' : '—';
+    return `<div class="stock-row" style="grid-template-columns:32px 28px 60px 1fr 80px 70px 80px 80px 60px;animation-delay:${i*0.03}s" onclick="openStockDetail('${r.ticker}')">
       <div class="stock-rank">${String(i+1).padStart(2,'0')}</div>
       <div class="star ${isStarred?'on':''}" onclick="event.stopPropagation();toggleWatch('${r.ticker}')">★</div>
       <div class="stock-ticker">${r.ticker}</div>
       <div class="stock-name"><b>${(r.name||'').slice(0,40)}</b>${r.country||''} · ${r.currency}</div>
       <div class="stock-metric"><span class="score-badge ${cls}">${state.rankMode==='sector'?fmt(scoreVal,2):scoreVal}</span></div>
+      <div class="stock-metric" style="color:var(--ink3);font-size:10px" title="Weight coverage — share of sector weights that had scoreable data">${coveragePct}</div>
       <div class="stock-metric">${fmt(r.frwdPE,1)}</div>
       <div class="stock-metric">${fmt(r.rendite3J,1)}%</div>
       <div class="stock-metric label">${(r.sector||'').slice(0,12)}</div>
